@@ -15,11 +15,6 @@ import (
 // Goken allows us to access the functions associated with obtaining a token
 type Goken struct{}
 
-// Token allows us to access the functions associated with obtaining a token
-type Token interface {
-	getTokenFromWeb(config *oauth2.Config) *oauth2.Token
-}
-
 // NewTokenizer returns a new Goken
 func NewTokenizer() *Goken {
 	tok := &Goken{}
@@ -47,7 +42,7 @@ func (g *Goken) GetTokenFromWeb(config *oauth2.Config) *oauth2.Token {
 
 // tokenCacheFile generates credential file path/filename.
 // It returns the generated credential path/filename.
-func (g *Goken) tokenCacheFile() (string, error) {
+func (g *Goken) TokenCacheFile() (string, error) {
 	usr, err := user.Current()
 	if err != nil {
 		return "", err
@@ -60,7 +55,7 @@ func (g *Goken) tokenCacheFile() (string, error) {
 
 // tokenFromFile retrieves a Token from a given file path.
 // It returns the retrieved Token and any read error encountered.
-func (g *Goken) tokenFromFile(file string) (*oauth2.Token, error) {
+func (g *Goken) TokenFromFile(file string) (*oauth2.Token, error) {
 	f, err := os.Open(file)
 	if err != nil {
 		return nil, err
@@ -73,7 +68,7 @@ func (g *Goken) tokenFromFile(file string) (*oauth2.Token, error) {
 
 // saveToken uses a file path to create a file and store the
 // token in it.
-func (g *Goken) saveToken(file string, token *oauth2.Token) {
+func (g *Goken) SaveToken(file string, token *oauth2.Token) {
 	fmt.Printf("Saving credential file to: %s\n", file)
 	f, err := os.OpenFile(file, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0600)
 	if err != nil {
