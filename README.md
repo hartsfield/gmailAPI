@@ -76,7 +76,7 @@ func main() {
 	}
 
 	for _, message := range inbox.Messages {
-		// Print the IDs. To get the message content, you must make a second call
+		// To get the message content, you must make a second call
 		// to the gmail API for each individual ID.
 	  msg, err := srv.Users.Messages.Get("me", message.Id).Do()
     fmt.Println(msg.Snippet)
