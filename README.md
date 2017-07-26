@@ -82,6 +82,7 @@ func main() {
     fmt.Println(msg.Snippet)
 	}
 }
+
 ```
 
 Also see my other package, inboxer, which makes performing basic actions on 
