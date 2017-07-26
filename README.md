@@ -85,5 +85,5 @@ func main() {
 
 ```
 
-Also see my other package, inboxer, which makes performing basic actions on 
+Also see my other package, [inboxer](https://gitlab.com/hartsfield/inboxer), which makes performing basic actions on 
 your inbox much more straight-forward. 
