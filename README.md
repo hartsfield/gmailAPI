@@ -78,8 +78,8 @@ func main() {
 	for _, message := range inbox.Messages {
 		// To get the message content, you must make a second call
 		// to the gmail API for each individual ID.
-	  msg, err := srv.Users.Messages.Get("me", message.Id).Do()
-    fmt.Println(msg.Snippet)
+	        msg, err := srv.Users.Messages.Get("me", message.Id).Do()
+                fmt.Println(msg.Snippet)
 	}
 }
 ```
