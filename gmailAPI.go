@@ -28,7 +28,7 @@ func ConnectToService(ctx context.Context, scope ...string) *gmail.Service {
 	// If you don't have a client_secret.json, go here (as of July 2017):
 	// https://auth0.com/docs/connections/social/google
 	// https://web.archive.org/web/20170708123613/https://auth0.com/docs/connections/social/google
-	b, err := ioutil.ReadFile("credentials.json")
+	b, err := ioutil.ReadFile("client_secret.json")
 	if err != nil {
 		log.Fatalf("Unable to read client secret file: %v", err)
 	}
