@@ -10,9 +10,9 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"net/http"
 	"net/url"
 	"os"
-	"os/user"
 	"path/filepath"
 
 	gmail "google.golang.org/api/gmail/v1"
@@ -21,34 +21,22 @@ import (
 	"golang.org/x/oauth2/google"
 )
 
-// ConnectToService uses a Context, config and 1 or more scopes to retrieve a
-// Token then generate a Client. It uses the client to connect to the gmail api
-// service and returns a *gmail.Service.
 func ConnectToService(ctx context.Context, scope ...string) *gmail.Service {
-	// If you don't have a client_secret.json, go here (as of July 2017):
-	// https://auth0.com/docs/connections/social/google
-	// https://web.archive.org/web/20170708123613/https://auth0.com/docs/connections/social/google
-	b, err := ioutil.ReadFile("client_secret.json")
+	b, err := ioutil.ReadFile("credentials.json")
 	if err != nil {
 		log.Fatalf("Unable to read client secret file: %v", err)
 	}
 
-	/////////////////////////////////////////////////////////////////////////////
-	// SCOPE https://developers.google.com/gmail/api/auth/scopes
-	/////////////////////////////////////////////////////////////////////////////
-	// If modifying these scopes, delete your previously saved credentials
-	// at ~/.credentials/gmail-go-quickstart.json
-	// If modifying this code to access other features of gmail, you may need
-	// to change scope.
 	config, err := google.ConfigFromJSON(b, scope...)
 	if err != nil {
 		log.Fatalf("Unable to parse client secret file to config: %v", err)
 	}
 
-	cacheFile, err := newTokenizer()
+	cacheFile, err := newTokenizer("./credentials")
 	if err != nil {
 		log.Fatalf("Unable to get path to cached credential file. %v", err)
 	}
+
 	token, err := tokenFromFile(cacheFile)
 	if err != nil {
 		token = getTokenFromWeb(config)
@@ -61,55 +49,62 @@ func ConnectToService(ctx context.Context, scope ...string) *gmail.Service {
 	return srv
 }
 
+// Retrieve a token, saves the token, then returns the generated client.
+func getClient(config *oauth2.Config) *http.Client {
+	// The file token.json stores the user's access and refresh tokens, and is
+	// created automatically when the authorization flow completes for the first
+	// time.
+	tokFile := "token.json"
+	tok, err := tokenFromFile(tokFile)
+	if err != nil {
+		tok = getTokenFromWeb(config)
+		saveToken(tokFile, tok)
+	}
+	return config.Client(context.Background(), tok)
+}
+
 // newTokenizer returns a new token and generates credential file path and
 // returns the generated credential path/filename along with any errors.
-func newTokenizer() (string, error) {
-	usr, err := user.Current()
-	if err != nil {
-		return "", err
-	}
-	tokenCacheDir := filepath.Join(usr.HomeDir, ".credentials")
-	os.MkdirAll(tokenCacheDir, 0700)
+func newTokenizer(tokenCacheDir string) (string, error) {
+	err := os.MkdirAll(tokenCacheDir, 0700)
 	return filepath.Join(tokenCacheDir, url.QueryEscape("gmail-go-quickstart.json")),
 		err
 }
 
-// tokenFromFile retrieves a Token from a given file path.
-// It returns the retrieved Token and any read errors encountered.
+// Retrieves a token from a local file.
 func tokenFromFile(file string) (*oauth2.Token, error) {
 	f, err := os.Open(file)
 	if err != nil {
 		return nil, err
 	}
-	t := &oauth2.Token{}
-	err = json.NewDecoder(f).Decode(t)
 	defer f.Close()
-	return t, err
+	tok := &oauth2.Token{}
+	err = json.NewDecoder(f).Decode(tok)
+	return tok, err
 }
 
-// getTokenFromWeb uses Config to request a Token. It returns the retrieved
-// Token.
+// Request a token from the web, then returns the retrieved token.
 func getTokenFromWeb(config *oauth2.Config) *oauth2.Token {
 	authURL := config.AuthCodeURL("state-token", oauth2.AccessTypeOffline)
 	fmt.Printf("Go to the following link in your browser then type the "+
 		"authorization code: \n%v\n", authURL)
 
-	var code string
-	if _, err := fmt.Scan(&code); err != nil {
-		log.Fatalf("Unable to read authorization code %v", err)
+	var authCode string
+	if _, err := fmt.Scan(&authCode); err != nil {
+		log.Fatalf("Unable to read authorization code: %v", err)
 	}
 
-	tok, err := config.Exchange(oauth2.NoContext, code)
+	tok, err := config.Exchange(context.TODO(), authCode)
 	if err != nil {
-		log.Fatalf("Unable to retrieve token from web %v", err)
+		log.Fatalf("Unable to retrieve token from web: %v", err)
 	}
 	return tok
 }
 
-// saveToken uses a file path to create a file and store the token in it.
-func saveToken(file string, token *oauth2.Token) {
-	fmt.Printf("Saving credential file to: %s\n", file)
-	f, err := os.OpenFile(file, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0600)
+// Saves a token to a file path.
+func saveToken(path string, token *oauth2.Token) {
+	fmt.Printf("Saving credential file to: %s\n", path)
+	f, err := os.OpenFile(path, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0600)
 	if err != nil {
 		log.Fatalf("Unable to cache oauth token: %v", err)
 	}
